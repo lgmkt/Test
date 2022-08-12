@@ -10,16 +10,16 @@ from plotly.subplots import make_subplots
 # for file IO
 import mysql.connector
 
-#conn = mysql.connector.connect(host='13.209.185.189', port = 3306,
-#                               user='lgo_marketing_read',
-#                               password = 'b56e5a4a5e814b2b9e362706c918fb04',
-#                               db = 'laundrygo_prod')
+conn = mysql.connector.connect(host='13.209.185.189', port = 3306,
+                               user='lgo_marketing_read',
+                               password = 'b56e5a4a5e814b2b9e362706c918fb04',
+                               db = 'laundrygo_prod')
 
-#@st.experimental_memo(ttl=600)
-#def run_query(query):
-#    cur = conn.cursor(dictionary=True)
-#    cur.execute(query)
-#    return pd.DataFrame(cur.fetchall())
+@st.experimental_memo(ttl=600)
+def run_query(query):
+    with conn.cursor(dictionary=True) as cur:
+        cur.execute(query)
+    return pd.DataFrame(cur.fetchall())
 
 
 file_path = './Data/'
@@ -47,11 +47,11 @@ user_sql = """
                                 and date_sub(date(now()), interval 1 day)
     group by date(created_at)
     """
-#user = run_query(user_sql)  # 최근 28일치 회원가입자 데이터
-user = pd.read_csv(file_path + 'user_0811.csv')
-user['created_at'] = pd.to_datetime(user['created_at'].str[:10])
-tot_user = user.shape[0]
-user = user.groupby(['created_at']).id.count().reset_index(name='user_cnt')
+user = run_query(user_sql)  # 최근 28일치 회원가입자 데이터
+#user = pd.read_csv(file_path + 'user_0811.csv')
+#user['created_at'] = pd.to_datetime(user['created_at'].str[:10])
+#tot_user = user.shape[0]
+#user = user.groupby(['created_at']).id.count().reset_index(name='user_cnt')
 
 
 # 1-1. 전체 회원 수 - 탈퇴 회원 카운트 x
@@ -62,7 +62,7 @@ tot_user_sql = """
         and deleted = false
         and date(created_at) <= date_sub(date(now()), interval 1 day)
     """
-#tot_user = run_query(tot_user_sql)['전체회원'][0]
+tot_user = run_query(tot_user_sql)['전체회원'][0]
 
 
 ## 2. 요금제 가입 & 해지건
@@ -103,8 +103,8 @@ inner join (
 
 on new_sub2.created_date = old_sub2.terminated_date
 """
-#요금제 = run_query(plan)
-요금제 = pd.read_csv(file_path + '요금제 가입, 해지_0811.csv')
+요금제 = run_query(plan)
+#요금제 = pd.read_csv(file_path + '요금제 가입, 해지_0811.csv')
 
 
 ## 3. 월정액 가입 & 해지건
@@ -145,8 +145,8 @@ monthly_plan = """
 
     on new_sub2.created_date = old_sub2.terminated_date
 """
-#월정액 = run_query(monthly_plan)
-월정액 = pd.read_csv(file_path + '월정액 가입, 해지_0811.csv')
+월정액 = run_query(monthly_plan)
+#월정액 = pd.read_csv(file_path + '월정액 가입, 해지_0811.csv')
 
 
 ## 4. 일별 매출액
@@ -164,8 +164,8 @@ rev_sql = """
                                     and date_sub(date(now()), interval 1 day)
         group by date(created_at)) a
     """
-#rev_dat = run_query(rev_sql)
-rev_dat = pd.read_csv(file_path + '일별 매출액_0811.csv')
+rev_dat = run_query(rev_sql)
+#rev_dat = pd.read_csv(file_path + '일별 매출액_0811.csv')
 
 
 ## 5. 수거신청건
@@ -173,8 +173,8 @@ wash_dat = pd.read_csv(file_path + '수거신청건_0811.csv').query("`기준 �
 
 
 ## 6. 커머스, 수선, 프리미엄 매출
-rev_dat2 = pd.read_csv(file_path + '커머스, 프리미엄, 수선 매출_0811.csv')
-rev_dat2[['커머스', '수선', '프리미엄']] = round(rev_dat2[['커머스', '수선', '프리미엄']] / 1000000, 1)
+#rev_dat2 = pd.read_csv(file_path + '커머스, 프리미엄, 수선 매출_0811.csv')
+#rev_dat2[['커머스', '수선', '프리미엄']] = round(rev_dat2[['커머스', '수선', '프리미엄']] / 1000000, 1)
 
 
 
@@ -219,7 +219,7 @@ dat_보상 = pd.merge(보상2, barcode, on=['일자', '공장구분'], how='righ
 
 
 ## 11. 세탁 관련 문의량
-voc = pd.read_csv(file_path + '문의현황_0811.csv')  # 일시, 공장구분, 문의량, 바코드수량 - 공장별 바코드 처리량까지 다 들어있음
+#voc = pd.read_csv(file_path + '문의현황_0811.csv')  # 일시, 공장구분, 문의량, 바코드수량 - 공장별 바코드 처리량까지 다 들어있음
 
 
 
